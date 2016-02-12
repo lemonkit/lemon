@@ -7,8 +7,6 @@
 #include <lemon/fs/file_status.hpp>
 #include <lemon/fs/dir_iterator.hpp>
 
-#include <filesystem>
-
 namespace lemon{ namespace fs{
     /**
      * get current working directory
