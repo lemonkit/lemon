@@ -13,6 +13,7 @@
 #include <system_error>
 #include <unordered_map>
 
+#include <mutex>
 
 #include <lemon/config.h>
 #include <lemon/nocopy.hpp>
@@ -21,6 +22,19 @@
 
 namespace lemon{ 
 	namespace io{
+
+		static std::once_flag was_socket_init_flag;
+
+		inline void was_socket_init()
+		{
+			WSADATA wsaData;
+
+			DWORD result;
+
+			if (0 != (result = WSAStartup(MAKEWORD(2, 2), &wsaData))) {
+				throw std::system_error(WSAGetLastError(),std::system_category());
+			}
+		}
 
 		class iocp_io_service final: private nocopy
 		{
@@ -39,6 +53,8 @@ namespace lemon{
 			
 			iocp_io_service():_joins(0)
 			{
+				std::call_once(was_socket_init_flag, was_socket_init);
+
 				_handler = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
 
 				if (_handler == NULL)
@@ -55,6 +71,17 @@ namespace lemon{
 			void run_one(std::error_code & ec) noexcept
 			{
 				run_one(std::chrono::seconds(-1), ec);
+			}
+
+			void run_one()
+			{
+				std::error_code ec;
+				run_one(ec);
+
+				if(ec)
+				{
+					throw std::system_error(ec);
+				}
 			}
 
 			void notify_all()

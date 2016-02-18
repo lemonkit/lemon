@@ -48,7 +48,12 @@ namespace lemon{
 			{
 
 			}
-
+		
+			~iocp_io_stream()
+			{
+				close();
+				::CloseHandle(get());
+			}
 		public:
 			template <typename Callback>
 			void read(buffer buff, Callback && callback)
